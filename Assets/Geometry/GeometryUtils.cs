@@ -5,73 +5,90 @@ using UnityEngine;
 
 public class GeometryUtils : MonoBehaviour
 {
-    public static bool IsSegmentIntersecting(Vector2 firstLineStart, Vector2 firstLineEnd, Vector2 secondLineStart,
-        Vector2 secondLineEnd)
-    {
-        var isIntersecting = false;
+    private static void Swap<T>(ref T lhs, ref T rhs) {
+        T temp = lhs;
+        lhs = rhs;
+        rhs = temp;
+    }
 
-        var firstLineDirection = (firstLineEnd - firstLineStart).normalized;
-        var secondLineDirection = (secondLineEnd - secondLineStart).normalized;
+    private static bool Approximately(float a, float b, float tolerance = 1e-5f) {
+        return Mathf.Abs(a - b) <= tolerance;
+    }
 
-        var firstLineNormal = new Vector2(-firstLineDirection.y, firstLineDirection.x);
-        var secondLineNormal = new Vector2(-secondLineDirection.y, secondLineDirection.x);
+    private static float CrossProduct2D(Vector2 a, Vector2 b) {
+        return a.x * b.y - b.x * a.y;
+    }
 
-        var a = firstLineNormal.x;
-        var b = firstLineNormal.y;
-
-        var c = secondLineNormal.x;
-        var d = secondLineNormal.y;
+    /// <summary>
+    /// Determine whether 2 lines intersect, and give the intersection point if so.
+    /// </summary>
+    /// <param name="p1start">Start point of the first line</param>
+    /// <param name="p1end">End point of the first line</param>
+    /// <param name="p2start">Start point of the second line</param>
+    /// <param name="p2end">End point of the second line</param>
+    /// <param name="intersection">If there is an intersection, this will be populated with the point</param>
+    /// <returns>True if the lines intersect, false otherwise.</returns>
+    public static bool IntersectLineSegments2D(Vector2 p1start, Vector2 p1end, Vector2 p2start, Vector2 p2end,
+        out Vector2 intersection) {
+        // Consider:
+        //   p1start = p
+        //   p1end = p + r
+        //   p2start = q
+        //   p2end = q + s
+        // We want to find the intersection point where :
+        //  p + t*r == q + u*s
+        // So we need to solve for t and u
         
-        var k1 = (a * firstLineStart.x) + (b * firstLineStart.y);
-        var k2 = (c * secondLineStart.x) + (d * secondLineStart.y);
+        var p = p1start;
+        var r = p1end - p1start;
+        var q = p2start;
+        var s = p2end - p2start;
+        var qminusp = q - p;
 
-        if (IsParallel(firstLineNormal, secondLineNormal))
-            return isIntersecting;
+        float cross_rs = CrossProduct2D(r, s);
 
-        if (IsOrthogonal(firstLineStart - secondLineStart, firstLineNormal))
-        {
-            isIntersecting = true;
-            return isIntersecting;
+        if (Approximately(cross_rs, 0f)) {
+            // Parallel lines
+            if (Approximately(CrossProduct2D(qminusp, r), 0f)) {
+                // Co-linear lines, could overlap
+                float rdotr = Vector2.Dot(r, r);
+                float sdotr = Vector2.Dot(s, r);
+                // this means lines are co-linear
+                // they may or may not be overlapping
+                float t0 = Vector2.Dot(qminusp, r / rdotr);
+                float t1 = t0 + sdotr / rdotr;
+                if (sdotr < 0) {
+                    // lines were facing in different directions so t1 > t0, swap to simplify check
+                    Swap(ref t0, ref t1);
+                }
+
+                if (t0 <= 1 && t1 >= 0) {
+                    // Nice half-way point intersection
+                    float t = Mathf.Lerp(Mathf.Max(0, t0), Mathf.Min(1, t1), 0.5f);
+                    intersection = p + t * r;
+                    return true;
+                } else {
+                    // Co-linear but disjoint
+                    intersection = Vector2.zero;
+                    return false;
+                }
+            } else {
+                // Just parallel in different places, cannot intersect
+                intersection = Vector2.zero;
+                return false;
+            }
+        } else {
+            // Not parallel, calculate t and u
+            float t = CrossProduct2D(qminusp, s) / cross_rs;
+            float u = CrossProduct2D(qminusp, r) / cross_rs;
+            if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
+                intersection = p + t * r;
+                return true;
+            } else {
+                // Lines only cross outside segment range
+                intersection = Vector2.zero;
+                return false;
+            }
         }
-
-        var intersectionPointX = (d * k1 - b * k2) / (a * d - b * c);
-        var intersectionPointY = (-c * k1 + a * k2) / (a * d - b * c);
-
-        var intersectionPoint = new Vector2(intersectionPointX, intersectionPointY);
-
-        if (IsBetween(firstLineStart, firstLineEnd, intersectionPoint) &&
-            IsBetween(secondLineStart, secondLineEnd, intersectionPoint))
-            isIntersecting = true;
-
-        return isIntersecting;
-    }
-
-    private static bool IsParallel(Vector2 vector1, Vector2 vector2)
-    {
-        if (Vector2.Angle(vector1, vector2) == 0f || Math.Abs(Vector2.Angle(vector1, vector2) - 180f) < 0.000001f)
-            return true;
-
-        return false;
-    }
-
-    private static bool IsOrthogonal(Vector2 vector1, Vector2 vector2)
-    {
-        if (Mathf.Abs(Vector2.Dot(vector1, vector2)) < 0.000001f)
-            return true;
-
-        return false;
-    }
-
-    private static bool IsBetween(Vector2 a, Vector2 b, Vector2 c)
-    {
-        bool isBetween = false;
-
-        var ab = b - a;
-        var ac = c - a;
-
-        if (Vector2.Dot(ab, ac) > 0f && ab.sqrMagnitude >= ac.sqrMagnitude)
-            isBetween = true;
-
-        return isBetween;
     }
 }

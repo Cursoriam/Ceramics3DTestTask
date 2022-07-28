@@ -5,6 +5,12 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
+struct LineSegment
+{
+    public Vector2 start;
+    public Vector2 end;
+}
+
 public class CeramicGrid : MonoBehaviour
 {
     [SerializeField] private int xSize;
@@ -29,20 +35,34 @@ public class CeramicGrid : MonoBehaviour
     private List<Vector3> alreadyVisited;
 
 
-
     private void Awake()
     {
         _rotationPivot = transform.position;;
         _leftLowerWallAngle = initialPoint;
-        _leftUpperWallAngle = new Vector3(initialPoint.x, wallSize.y);
-        _rightUpperWallAngle = new Vector3(wallSize.x, wallSize.y);
-        _rightLowerWallAngle = new Vector3(wallSize.x, initialPoint.y);
+        _leftUpperWallAngle = new Vector3(initialPoint.x, initialPoint.y + wallSize.y);
+        _rightUpperWallAngle = new Vector3(initialPoint.x + wallSize.x, initialPoint.y + wallSize.y);
+        _rightLowerWallAngle = new Vector3(initialPoint.x + wallSize.x, initialPoint.y);
         alreadyVisited = new List<Vector3>();
         _tiles = new List<GameObject>();
         GenerateTiles(initialPoint);
         transform.rotation = Quaternion.Euler(0.0f, 0.0f, -angle);
+        Debug.Log(_rightUpperWallAngle);
+        
+        foreach (var tile in _tiles)
+        {
+            IsIntersectingWithWalls(tile);
+        }
     }
-    
+
+    private void Update()
+    {
+        if (Input.GetMouseButtonDown(0))
+        {
+            var mousepos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+            Debug.Log(mousepos);
+        }
+    }
+
     private void GenerateTiles(Vector2 spawnPoint)
     {
         alreadyVisited.Add(spawnPoint);
@@ -89,33 +109,68 @@ public class CeramicGrid : MonoBehaviour
         }
     }
 
-    private bool IsIntersectingWithWall(Vector2 leftLowerVertex, Vector2 leftUpperVertex, Vector2 rightUpperVertex,
-        Vector2 rightLowerVertex, Vector2 wallStart, Vector2 wallEnd)
+    private void IsIntersectingWithWalls(GameObject tile)
     {
-        if (GeometryUtils.IsSegmentIntersecting(wallStart,
-            wallEnd, leftLowerVertex, leftUpperVertex))
-            return true;
-        
-        if (GeometryUtils.IsSegmentIntersecting(wallStart,
-            wallEnd, leftUpperVertex, rightUpperVertex))
-            return true;
-        
-        if (GeometryUtils.IsSegmentIntersecting(wallStart,
-            wallEnd, rightUpperVertex, rightLowerVertex))
-            return true;
-        
-        if (GeometryUtils.IsSegmentIntersecting(wallStart,
-            wallEnd, rightLowerVertex, leftLowerVertex))
-            return true;
+        var vertices = tile.GetComponent<MeshFilter>().mesh.vertices;
+        var tileSides = new LineSegment[4];
+        tileSides[0].start = tile.transform.TransformPoint(vertices[0]);
+        tileSides[0].end = tile.transform.TransformPoint(vertices[1]);
+        tileSides[1].start = tile.transform.TransformPoint(vertices[1]);
+        tileSides[1].end = tile.transform.TransformPoint(vertices[2]);
+        tileSides[2].start = tile.transform.TransformPoint(vertices[2]);
+        tileSides[2].end = tile.transform.TransformPoint(vertices[3]);
+        tileSides[3].start = tile.transform.TransformPoint(vertices[3]);
+        tileSides[3].end = tile.transform.TransformPoint(vertices[0]);
 
-        return false;
+        Debug.Log(tile.name);
+        
+        
+        var leftWallIntersects = false;
+        var upperWallIntersects = false;
+        var rightWallIntersects = false;
+        var lowerWallIntersects = false;
+
+        var intersection = new Vector2();
+        var found = false;
+        
+        for (int i = 0; i < tileSides.Length; i++)
+        {
+            if (GeometryUtils.IntersectLineSegments2D(tileSides[i].start, tileSides[i].end,
+                _leftLowerWallAngle, _leftUpperWallAngle, out intersection))
+                leftWallIntersects = true;
+            
+            if (GeometryUtils.IntersectLineSegments2D(tileSides[i].start, tileSides[i].end,
+                _leftUpperWallAngle, _rightUpperWallAngle, out intersection))
+                upperWallIntersects = true;
+
+            
+            if (GeometryUtils.IntersectLineSegments2D(tileSides[i].start, tileSides[i].end,
+                _rightUpperWallAngle, _rightLowerWallAngle, out intersection))
+                rightWallIntersects = true;
+            
+            if (GeometryUtils.IntersectLineSegments2D(tileSides[i].start, tileSides[i].end,
+                _rightLowerWallAngle, _leftLowerWallAngle, out intersection))
+                lowerWallIntersects = true;
+        }
+
+        if(leftWallIntersects)
+            Debug.Log("Left Wall Intersection");
+        
+        if(upperWallIntersects)
+            Debug.Log("Upper Wall Intersection");
+        
+        if(rightWallIntersects)
+            Debug.Log("Right Wall Intersection");
+        
+        if(lowerWallIntersects)
+            Debug.Log("Lower Wall Intersection");
     }
     
     private bool PointInsideWalls(Vector3 point)
     {
         var inside = false;
-        var rect = new Rect(_leftLowerWallAngle.x, _leftLowerWallAngle.y, _rightUpperWallAngle.x,
-            _rightUpperWallAngle.y);
+        var rect = new Rect(initialPoint.x, initialPoint.y, wallSize.x,
+            wallSize.y);
         if (rect.Contains(point))
             inside = true;
         
