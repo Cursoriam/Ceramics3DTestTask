@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 using UnityEngine.WSA;
 
@@ -11,13 +12,13 @@ public class CeramicTile
 
     public GameObject CeramicTileGameObject;
     
-    public CeramicTile(Vector2 tileSize, Material material, string name)
+    public CeramicTile(List<Vector3> vertices, Vector2 tileSize, Material material, string name)
     {
         _mesh = new Mesh();
         _mesh.name = "Ceramic Tile Mesh";
-        _mesh.vertices = GetVertices(tileSize);
-        _mesh.triangles = GetTriangles(tileSize);
-        _mesh.uv = GetUV(tileSize);
+        _mesh.vertices = vertices.ToArray();
+        _mesh.triangles = GetTriangles(vertices.ToArray());
+        _mesh.uv = GetUV(vertices.ToArray(), tileSize);
         _material = material;
         _name = name;
         CreateGameObject();
@@ -34,15 +35,13 @@ public class CeramicTile
         return vertices.ToArray();
     }
 
-    private int[] GetTriangles(Vector2 tileSize)
+    private int[] GetTriangles(Vector3[] vertices)
     {
-        var triangulator = new Triangulator(GetVertices(tileSize));
-        return triangulator.Triangulate();
+        return TriangulateConvexPolygon(vertices.ToList());
     }
 
-    private Vector2[] GetUV(Vector2 tileSize)
+    private Vector2[] GetUV(Vector3[] vertices, Vector2 tileSize)
     {
-        var vertices = GetVertices(tileSize);
         var uv = new Vector2[vertices.Length];
         for (int i = 0; i < vertices.Length; i++)
             uv[i] = new Vector2(vertices[i].x/tileSize.x, vertices[i].y/tileSize.y);
@@ -58,5 +57,19 @@ public class CeramicTile
         };
         CeramicTileGameObject.AddComponent<MeshFilter>().mesh = _mesh;
         CeramicTileGameObject.AddComponent<MeshRenderer>().material = _material;
+    }
+    
+    public static int[] TriangulateConvexPolygon(List<Vector3> convexHullpoints)
+    {
+        List<int> triangles = new List<int>();
+
+        for (int i = 2; i < convexHullpoints.Count; i++)
+        {
+            triangles.Add(0);
+            triangles.Add(i - 1);
+            triangles.Add(i);
+        }
+
+        return triangles.ToArray();
     }
 }

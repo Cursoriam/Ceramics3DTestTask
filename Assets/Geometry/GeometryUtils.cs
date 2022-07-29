@@ -29,7 +29,7 @@ public class GeometryUtils : MonoBehaviour
     /// <param name="intersection">If there is an intersection, this will be populated with the point</param>
     /// <returns>True if the lines intersect, false otherwise.</returns>
     public static bool IntersectLineSegments2D(Vector2 p1start, Vector2 p1end, Vector2 p2start, Vector2 p2end,
-        out Vector2 intersection) {
+        out Vector3 intersection) {
         // Consider:
         //   p1start = p
         //   p1end = p + r
