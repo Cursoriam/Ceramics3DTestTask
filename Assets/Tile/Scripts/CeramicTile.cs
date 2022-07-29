@@ -69,7 +69,7 @@ public class CeramicTile
             triangles.Add(i - 1);
             triangles.Add(i);
         }
-
+        
         return triangles.ToArray();
     }
 }
