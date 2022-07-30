@@ -66,7 +66,7 @@ public class GeometryUtils : MonoBehaviour
                     // Nice half-way point intersection
                     float t = Mathf.Lerp(Mathf.Max(0, t0), Mathf.Min(1, t1), 0.5f);
                     intersection = p + t * r;
-                    return true;
+                    return false;
                 } else {
                     // Co-linear but disjoint
                     intersection = Vector2.zero;

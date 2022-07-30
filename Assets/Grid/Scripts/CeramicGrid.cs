@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.WSA;
 
 struct LineSegment
 {
@@ -77,7 +78,7 @@ public class ClockwiseComparer : IComparer
                 return -1;
  
             // Check to see which point is closest
-            return (firstOffset.sqrMagnitude > secondOffset.sqrMagnitude) ? 1 : -1;
+            return (firstOffset.sqrMagnitude > secondOffset.sqrMagnitude && Math.Abs(first.y - second.y) < 0.001f) ? 1 : -1;
         }
     }
 
@@ -104,7 +105,7 @@ public class CeramicGrid : MonoBehaviour
     private Vector3 _rightLowerWallAngle;
     private List<Vector3> alreadyVisited;
     private List<Vector3> _vertices;
-
+    private float _square;
 
     private void Awake()
     {
@@ -116,15 +117,18 @@ public class CeramicGrid : MonoBehaviour
         alreadyVisited = new List<Vector3>();
         _tiles = new List<GameObject>();
         _vertices = new List<Vector3>();
-        GenerateTiles(_rotationPivot);
+        var startPoint = new Vector3(GetRealPoint(initialPoint, initialPoint).x - initialPoint.x,
+            GetRealPoint(initialPoint, initialPoint).y - initialPoint.y);
+        GenerateTiles(startPoint);
         transform.rotation = Quaternion.Euler(0.0f, 0.0f, -angle);
+        Debug.Log(_square);
     }
     
     private void GenerateTiles(Vector3 spawnPoint)
     {
-        alreadyVisited.Add(spawnPoint);
+        spawnPoint = new Vector3(Mathf.Round(spawnPoint.x * 100f)/100f, Mathf.Round(spawnPoint.y*100f)/100f);
         
-        Debug.Log("Tile (" + spawnPoint.x + ", " + spawnPoint.y + ")");
+        alreadyVisited.Add(spawnPoint);
         
         var tileCorners = new Vector3[4];
         tileCorners[0] = new Vector3(0.0f, 0.0f);
@@ -135,11 +139,6 @@ public class CeramicGrid : MonoBehaviour
 
         var vertices = tileCorners.Where(corner => 
             PointInsideWalls(GetRealPoint(corner, spawnPoint))).ToList();
-        
-        foreach (var vertex in vertices)
-        {
-            Debug.Log(vertex);
-        }
         
         vertices.AddRange(TileInterSectionPointsWithWalls(tileCorners, spawnPoint));
 
@@ -206,7 +205,24 @@ public class CeramicGrid : MonoBehaviour
                 sortedVertices.Add(vertex);
         }
 
+        sortedVertices = sortedVertices.Distinct().ToList();
+        vertices = sortedVertices;
         sortedVertices.Reverse();
+        
+        float sum = 0.0f;
+        for (int i = 2; i < vertices.Count; i++)
+        {
+            var corner = vertices[0];
+            var a = vertices[i - 1] - corner;
+            var b = vertices[i] - corner;
+            
+            sum += Vector3.Cross(a, b).magnitude/2.0f;
+        }
+        
+        Debug.Log("Tile (" + spawnPoint.x + ", " + spawnPoint.y + ")");
+        Debug.Log(sum);
+        
+        _square += sum;
         
         _vertices.AddRange(sortedVertices);
         var ceramicTile = new CeramicTile(sortedVertices.ToList(), tileSize, material,
@@ -215,8 +231,6 @@ public class CeramicGrid : MonoBehaviour
         ceramicTile.CeramicTileGameObject.transform.SetParent(transform);
         _tiles.Add(ceramicTile.CeramicTileGameObject);
         
-
-
         //CheckLeft
         if ((TileInsideWalls(new Vector2(spawnPoint.x - (tileSize.x + seam), spawnPoint.y), spawnPoint)) &&
             !PointAlreadyVisited(new Vector2(spawnPoint.x - (tileSize.x + seam), spawnPoint.y)))
@@ -349,8 +363,8 @@ public class CeramicGrid : MonoBehaviour
         var visited = false;
         foreach (var visitedPoint in alreadyVisited)
         {
-            if (NearlyEqual(point.x, visitedPoint.x) &&
-                NearlyEqual(point.y, visitedPoint.y))
+            if (NearlyEqual(Mathf.Round(point.x * 100f) / 100f, visitedPoint.x) &&
+                NearlyEqual(Mathf.Round(point.y * 100f) / 100f, visitedPoint.y))
             {
                 visited = true;
             }
