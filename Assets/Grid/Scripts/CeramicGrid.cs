@@ -77,7 +77,7 @@ public class ClockwiseComparer : IComparer
                 return -1;
  
             // Check to see which point is closest
-            return (firstOffset.sqrMagnitude < secondOffset.sqrMagnitude) ? 1 : -1;
+            return (firstOffset.sqrMagnitude > secondOffset.sqrMagnitude) ? 1 : -1;
         }
     }
 
@@ -116,21 +116,15 @@ public class CeramicGrid : MonoBehaviour
         alreadyVisited = new List<Vector3>();
         _tiles = new List<GameObject>();
         _vertices = new List<Vector3>();
-        GenerateTiles(initialPoint);
+        GenerateTiles(_rotationPivot);
         transform.rotation = Quaternion.Euler(0.0f, 0.0f, -angle);
     }
-
-    private void Update()
-    {
-        if (Input.GetMouseButtonDown(0))
-        {
-            var mousepos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        }
-    }
-
+    
     private void GenerateTiles(Vector3 spawnPoint)
     {
         alreadyVisited.Add(spawnPoint);
+        
+        Debug.Log("Tile (" + spawnPoint.x + ", " + spawnPoint.y + ")");
         
         var tileCorners = new Vector3[4];
         tileCorners[0] = new Vector3(0.0f, 0.0f);
@@ -141,8 +135,11 @@ public class CeramicGrid : MonoBehaviour
 
         var vertices = tileCorners.Where(corner => 
             PointInsideWalls(GetRealPoint(corner, spawnPoint))).ToList();
-
-        Debug.Log("Tile (" + spawnPoint.x + ", " + spawnPoint.y + ")");
+        
+        foreach (var vertex in vertices)
+        {
+            Debug.Log(vertex);
+        }
         
         vertices.AddRange(TileInterSectionPointsWithWalls(tileCorners, spawnPoint));
 
@@ -190,7 +187,8 @@ public class CeramicGrid : MonoBehaviour
         
         foreach (var vertex in vertices)
         {
-            if (vertex.y < lowerLeftVertex.y || (vertex.y == lowerLeftVertex.y && vertex.x < lowerLeftVertex.x))
+            if (vertex.y < lowerLeftVertex.y || (Math.Abs(vertex.y - lowerLeftVertex.y) < 0.001f 
+                                                 && vertex.x < lowerLeftVertex.x))
                 lowerLeftVertex = vertex;
         }
         
@@ -392,7 +390,7 @@ public class CeramicGrid : MonoBehaviour
         return Math.Abs(a - b) <= difference;
     }
     
-    private void OnDrawGizmos () {
+    /*private void OnDrawGizmos () {
         if(_vertices == null)
             return;
         
@@ -400,5 +398,5 @@ public class CeramicGrid : MonoBehaviour
         for (int i = 0; i < _vertices.Count; i++) {
             Gizmos.DrawSphere(_vertices[i], 0.1f);
         }
-    }
+    }*/
 }
