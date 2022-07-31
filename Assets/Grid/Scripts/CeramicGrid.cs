@@ -109,7 +109,7 @@ public class CeramicGrid : MonoBehaviour
 
     private void Awake()
     {
-        _rotationPivot = transform.position;;
+        _rotationPivot = transform.position;
         _leftLowerWallAngle = initialPoint;
         _leftUpperWallAngle = new Vector3(initialPoint.x, initialPoint.y + wallSize.y);
         _rightUpperWallAngle = new Vector3(initialPoint.x + wallSize.x, initialPoint.y + wallSize.y);
@@ -117,8 +117,11 @@ public class CeramicGrid : MonoBehaviour
         alreadyVisited = new List<Vector3>();
         _tiles = new List<GameObject>();
         _vertices = new List<Vector3>();
-        var startPoint = new Vector3(GetRealPoint(initialPoint, initialPoint).x - initialPoint.x,
-            GetRealPoint(initialPoint, initialPoint).y - initialPoint.y);
+
+        var startPoint = initialPoint;
+        var direction = (startPoint - _rotationPivot);
+        direction = Quaternion.Euler(0.0f, 0.0f, angle) * direction;
+        startPoint = direction + _rotationPivot;
         GenerateTiles(startPoint);
         transform.rotation = Quaternion.Euler(0.0f, 0.0f, -angle);
         Debug.Log(_square);
@@ -136,101 +139,106 @@ public class CeramicGrid : MonoBehaviour
         tileCorners[2] = new Vector3(tileSize.x, tileSize.y);
         tileCorners[3] = new Vector3(tileSize.x, 0.0f);
         
-
+        
+        //Tile corners
         var vertices = tileCorners.Where(corner => 
             PointInsideWalls(GetRealPoint(corner, spawnPoint))).ToList();
         
+        //Wall intersections
         vertices.AddRange(TileInterSectionPointsWithWalls(tileCorners, spawnPoint));
 
-        var lowerLeftVertex = Vector3.positiveInfinity;
-        
-        if (WallCornerInsideTile(_leftLowerWallAngle, spawnPoint))
+        if (vertices.Count != 0)
         {
-            var corner = _leftLowerWallAngle;
-            var direction = (corner - _rotationPivot);
-            direction = Quaternion.Euler(0.0f, 0.0f, angle) * direction;
-            corner = direction + _rotationPivot;
-            corner -= spawnPoint;
-            vertices.Add(corner);
-        }
-        
-        if (WallCornerInsideTile(_leftUpperWallAngle, spawnPoint))
-        {
-            var corner = _leftUpperWallAngle;
-            var direction = (corner - _rotationPivot);
-            direction = Quaternion.Euler(0.0f, 0.0f, angle) * direction;
-            corner = direction + _rotationPivot;
-            corner -= spawnPoint;
-            vertices.Add(corner);
-        }
-        
-        if (WallCornerInsideTile(_rightUpperWallAngle, spawnPoint))
-        {
-            var corner = _rightUpperWallAngle;
-            var direction = (corner - _rotationPivot);
-            direction = Quaternion.Euler(0.0f, 0.0f, angle) * direction;
-            corner = direction + _rotationPivot;
-            corner -= spawnPoint;
-            vertices.Add(corner);
-        }
-        
-        if (WallCornerInsideTile(_rightLowerWallAngle, spawnPoint))
-        {
-            var corner = _rightLowerWallAngle;
-            var direction = (corner - _rotationPivot);
-            direction = Quaternion.Euler(0.0f, 0.0f, angle) * direction;
-            corner = direction + _rotationPivot;
-            corner -= spawnPoint;
-            vertices.Add(corner);
-        }
-        
-        foreach (var vertex in vertices)
-        {
-            if (vertex.y < lowerLeftVertex.y || (Math.Abs(vertex.y - lowerLeftVertex.y) < 0.001f 
-                                                 && vertex.x < lowerLeftVertex.x))
-                lowerLeftVertex = vertex;
-        }
-        
-        var tmpVertices = vertices.ToArray();
-        
-        
-        Array.Sort(tmpVertices, new ClockwiseComparer(lowerLeftVertex));
 
-        var sortedVertices = new List<Vector3>();
-        
-        sortedVertices.Add(lowerLeftVertex);
-        foreach (var vertex in tmpVertices)
-        {
-            if(lowerLeftVertex != vertex)
-                sortedVertices.Add(vertex);
-        }
+            var lowerLeftVertex = Vector3.positiveInfinity;
 
-        sortedVertices = sortedVertices.Distinct().ToList();
-        vertices = sortedVertices;
-        sortedVertices.Reverse();
-        
-        float sum = 0.0f;
-        for (int i = 2; i < vertices.Count; i++)
-        {
-            var corner = vertices[0];
-            var a = vertices[i - 1] - corner;
-            var b = vertices[i] - corner;
+            //Wall corners
+            if (WallCornerInsideTile(_leftLowerWallAngle, spawnPoint))
+            {
+                var corner = _leftLowerWallAngle;
+                var direction = (corner - _rotationPivot);
+                direction = Quaternion.Euler(0.0f, 0.0f, angle) * direction;
+                corner = direction + _rotationPivot;
+                corner -= spawnPoint;
+                vertices.Add(corner);
+            }
+
+            if (WallCornerInsideTile(_leftUpperWallAngle, spawnPoint))
+            {
+                var corner = _leftUpperWallAngle;
+                var direction = (corner - _rotationPivot);
+                direction = Quaternion.Euler(0.0f, 0.0f, angle) * direction;
+                corner = direction + _rotationPivot;
+                corner -= spawnPoint;
+                vertices.Add(corner);
+            }
+
+            if (WallCornerInsideTile(_rightUpperWallAngle, spawnPoint))
+            {
+                var corner = _rightUpperWallAngle;
+                var direction = (corner - _rotationPivot);
+                direction = Quaternion.Euler(0.0f, 0.0f, angle) * direction;
+                corner = direction + _rotationPivot;
+                corner -= spawnPoint;
+                vertices.Add(corner);
+            }
+
+            if (WallCornerInsideTile(_rightLowerWallAngle, spawnPoint))
+            {
+                var corner = _rightLowerWallAngle;
+                var direction = (corner - _rotationPivot);
+                direction = Quaternion.Euler(0.0f, 0.0f, angle) * direction;
+                corner = direction + _rotationPivot;
+                corner -= spawnPoint;
+                vertices.Add(corner);
+            }
+
+            foreach (var vertex in vertices)
+            {
+                if (vertex.y < lowerLeftVertex.y || (Math.Abs(vertex.y - lowerLeftVertex.y) < 0.001f
+                                                     && vertex.x < lowerLeftVertex.x))
+                    lowerLeftVertex = vertex;
+            }
+
+            var tmpVertices = vertices.ToArray();
+
+
+            Array.Sort(tmpVertices, new ClockwiseComparer(lowerLeftVertex));
+
+            var sortedVertices = new List<Vector3>();
+
+            sortedVertices.Add(lowerLeftVertex);
+            foreach (var vertex in tmpVertices)
+            {
+                if (lowerLeftVertex != vertex)
+                    sortedVertices.Add(vertex);
+            }
+
+            sortedVertices = sortedVertices.Distinct().ToList();
+            vertices = sortedVertices;
+            sortedVertices.Reverse();
+
+            float sum = 0.0f;
+            for (int i = 2; i < vertices.Count; i++)
+            {
+                var corner = vertices[0];
+                var a = vertices[i - 1] - corner;
+                var b = vertices[i] - corner;
+
+                sum += Vector3.Cross(a, b).magnitude / 2.0f;
+            }
             
-            sum += Vector3.Cross(a, b).magnitude/2.0f;
+            _square += sum;
+
+
+            _vertices.AddRange(sortedVertices);
+            var ceramicTile = new CeramicTile(sortedVertices.ToList(), tileSize, material,
+                "Tile (" + spawnPoint.x + ", " + spawnPoint.y + ")");
+            ceramicTile.CeramicTileGameObject.transform.position = new Vector3(spawnPoint.x, spawnPoint.y);
+            ceramicTile.CeramicTileGameObject.transform.SetParent(transform);
+            _tiles.Add(ceramicTile.CeramicTileGameObject);
         }
-        
-        Debug.Log("Tile (" + spawnPoint.x + ", " + spawnPoint.y + ")");
-        Debug.Log(sum);
-        
-        _square += sum;
-        
-        _vertices.AddRange(sortedVertices);
-        var ceramicTile = new CeramicTile(sortedVertices.ToList(), tileSize, material,
-            "Tile (" + spawnPoint.x + ", " + spawnPoint.y + ")");
-        ceramicTile.CeramicTileGameObject.transform.position = new Vector3(spawnPoint.x, spawnPoint.y);
-        ceramicTile.CeramicTileGameObject.transform.SetParent(transform);
-        _tiles.Add(ceramicTile.CeramicTileGameObject);
-        
+
         //CheckLeft
         if ((TileInsideWalls(new Vector2(spawnPoint.x - (tileSize.x + seam), spawnPoint.y), spawnPoint)) &&
             !PointAlreadyVisited(new Vector2(spawnPoint.x - (tileSize.x + seam), spawnPoint.y)))
