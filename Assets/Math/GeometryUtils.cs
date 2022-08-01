@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEngine;
 
 public class GeometryUtils : MonoBehaviour
 {
     private static void Swap<T>(ref T lhs, ref T rhs) {
-        T temp = lhs;
-        lhs = rhs;
-        rhs = temp;
+        (lhs, rhs) = (rhs, lhs);
     }
 
     private static bool Approximately(float a, float b, float tolerance = 1e-5f) {
@@ -22,13 +18,13 @@ public class GeometryUtils : MonoBehaviour
     /// <summary>
     /// Determine whether 2 lines intersect, and give the intersection point if so.
     /// </summary>
-    /// <param name="p1start">Start point of the first line</param>
-    /// <param name="p1end">End point of the first line</param>
-    /// <param name="p2start">Start point of the second line</param>
-    /// <param name="p2end">End point of the second line</param>
+    /// <param name="p1Start">Start point of the first line</param>
+    /// <param name="p1End">End point of the first line</param>
+    /// <param name="p2Start">Start point of the second line</param>
+    /// <param name="p2End">End point of the second line</param>
     /// <param name="intersection">If there is an intersection, this will be populated with the point</param>
     /// <returns>True if the lines intersect, false otherwise.</returns>
-    public static bool IntersectLineSegments2D(Vector2 p1start, Vector2 p1end, Vector2 p2start, Vector2 p2end,
+    public static bool IntersectLineSegments2D(Vector2 p1Start, Vector2 p1End, Vector2 p2Start, Vector2 p2End,
         out Vector3 intersection) {
         // Consider:
         //   p1start = p
@@ -39,15 +35,15 @@ public class GeometryUtils : MonoBehaviour
         //  p + t*r == q + u*s
         // So we need to solve for t and u
         
-        var p = p1start;
-        var r = p1end - p1start;
-        var q = p2start;
-        var s = p2end - p2start;
+        var p = p1Start;
+        var r = p1End - p1Start;
+        var q = p2Start;
+        var s = p2End - p2Start;
         var qminusp = q - p;
 
-        float cross_rs = CrossProduct2D(r, s);
+        float crossRs = CrossProduct2D(r, s);
 
-        if (Approximately(cross_rs, 0f)) {
+        if (Approximately(crossRs, 0f)) {
             // Parallel lines
             if (Approximately(CrossProduct2D(qminusp, r), 0f)) {
                 // Co-linear lines, could overlap
@@ -79,8 +75,8 @@ public class GeometryUtils : MonoBehaviour
             }
         } else {
             // Not parallel, calculate t and u
-            float t = CrossProduct2D(qminusp, s) / cross_rs;
-            float u = CrossProduct2D(qminusp, r) / cross_rs;
+            float t = CrossProduct2D(qminusp, s) / crossRs;
+            float u = CrossProduct2D(qminusp, r) / crossRs;
             if (t >= 0 && t <= 1 && u >= 0 && u <= 1) {
                 intersection = p + t * r;
                 return true;
@@ -90,5 +86,20 @@ public class GeometryUtils : MonoBehaviour
                 return false;
             }
         }
+    }
+    
+    public static float CalculatePolygonSquare(List<Vector3> vertices)
+    {
+        float sum = 0.0f;
+        for (int i = 2; i < vertices.Count; i++)
+        {
+            var corner = vertices[0];
+            var a = vertices[i - 1] - corner;
+            var b = vertices[i] - corner;
+
+            sum += Vector3.Cross(a, b).magnitude / 2.0f;
+        }
+
+        return sum;
     }
 }

@@ -1,40 +1,29 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
-using UnityEngine.WSA;
 
 public class CeramicTile
 {
-    private Mesh _mesh;
-    private Material _material;
-    private string _name;
+    private readonly Mesh _mesh;
+    private readonly Material _material;
+    private readonly string _name;
 
     public GameObject CeramicTileGameObject;
     
     public CeramicTile(List<Vector3> vertices, Vector2 tileSize, Material material, string name)
     {
-        _mesh = new Mesh();
-        _mesh.name = "Ceramic Tile Mesh";
-        _mesh.vertices = vertices.ToArray();
-        _mesh.triangles = GetTriangles(vertices.ToArray());
-        _mesh.uv = GetUV(vertices.ToArray(), tileSize);
+        _mesh = new Mesh
+        {
+            name = "Ceramic Tile Mesh",
+            vertices = vertices.ToArray(),
+            triangles = GetTriangles(vertices.ToArray()),
+            uv = GetUV(vertices.ToArray(), tileSize)
+        };
         _material = material;
         _name = name;
         CreateGameObject();
     }
-
-    private Vector3[] GetVertices(Vector2 rightUpperAngle)
-    {
-        //Добавить дополнительные точки при пересечении с границей стены
-        var vertices = new List<Vector3>();
-        vertices.Add(new Vector3(0.0f, 0.0f));
-        vertices.Add(new Vector3(0.0f, rightUpperAngle.y));
-        vertices.Add(new Vector3(rightUpperAngle.x, rightUpperAngle.y));
-        vertices.Add(new Vector3(rightUpperAngle.x, 0.0f));
-        return vertices.ToArray();
-    }
-
+    
     private int[] GetTriangles(Vector3[] vertices)
     {
         return TriangulateConvexPolygon(vertices.ToList());
@@ -58,8 +47,8 @@ public class CeramicTile
         CeramicTileGameObject.AddComponent<MeshFilter>().mesh = _mesh;
         CeramicTileGameObject.AddComponent<MeshRenderer>().material = _material;
     }
-    
-    public static int[] TriangulateConvexPolygon(List<Vector3> convexHullpoints)
+
+    private static int[] TriangulateConvexPolygon(List<Vector3> convexHullpoints)
     {
         List<int> triangles = new List<int>();
 
