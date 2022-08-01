@@ -25,13 +25,16 @@ public class GridRenewer : MonoBehaviour
     [SerializeField]
     private Vector2 wallSize;
 
+    [SerializeField] private float squareOfUnitsPerMeters;
+
     private CeramicGrid _grid;
 
     private void Start()
     {
         _grid = new CeramicGrid(0, 0, 0, tileSize, material, parent, wallSize,
             initialPoint);
-        squareText.text = "Площадь, кв/м " + Math.Round((_grid.Square * 0.01f) * 100f) / 100f;
+        squareText.text = "Площадь, кв/м " + Math.Round((_grid.Square * squareOfUnitsPerMeters) * Constants.Precision) / 
+            Constants.Precision;
     }
 
     public void RenewGrid()
@@ -51,8 +54,9 @@ public class GridRenewer : MonoBehaviour
         int.TryParse(angle.text, out tileAngle);
         int.TryParse(bias.text, out tileBias);
 
-        _grid = new CeramicGrid(tileSeam / 100f, tileAngle, tileBias / 100f, tileSize, material, parent, wallSize,
-            initialPoint);
-        squareText.text = "Площадь, кв/м " + Math.Round((_grid.Square * 0.01f) * 100f) / 100f;
+        _grid = new CeramicGrid(tileSeam / Constants.Precision, tileAngle, tileBias / Constants.Precision,
+            tileSize, material, parent, wallSize, initialPoint);
+        squareText.text = "Площадь, кв/м " + Math.Round((_grid.Square * squareOfUnitsPerMeters) * Constants.Precision) / 
+            Constants.Precision;
     }
 }

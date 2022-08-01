@@ -2384,6 +2384,7 @@ MonoBehaviour:
   material: {fileID: 2100000, guid: b43ca3873fbdf3e489200437deda8471, type: 2}
   parent: {fileID: 1648464163}
   wallSize: {x: 8, y: 8}
+  squareOfUnitsPerMeters: 0.01
 --- !u!4 &1955505037
 Transform:
   m_ObjectHideFlags: 0

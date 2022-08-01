@@ -84,8 +84,8 @@ public class CeramicGrid
     private void GenerateTiles(Vector3 spawnPoint)
     {
         //Round spawn point coordinates
-        spawnPoint = new Vector3(Mathf.Round(spawnPoint.x * 100f) / 100f,
-            Mathf.Round(spawnPoint.y * 100f) / 100f);
+        spawnPoint = new Vector3(Mathf.Round(spawnPoint.x * Constants.Precision) / Constants.Precision,
+            Mathf.Round(spawnPoint.y * Constants.Precision) / Constants.Precision);
 
         //Add point to already visited points to avoid stack overflow
         _alreadyVisited.Add(spawnPoint);
@@ -126,14 +126,14 @@ public class CeramicGrid
     {
         var neighborPoints = new List<Vector3>
         {
-            new Vector2(Mathf.Round((spawnPoint.x - (_tileSize.x + _seam)) * 100f) / 100f,
-                Mathf.Round(spawnPoint.y * 100f) / 100f), //Left neighbor point
-            new Vector2(Mathf.Round((spawnPoint.x + _bias) * 100f) / 100f,
-                Mathf.Round((spawnPoint.y + (_tileSize.y + _seam)) * 100f) / 100f), //Upper neighbor point
-            new Vector2(Mathf.Round((spawnPoint.x + (_tileSize.x + _seam)) * 100f) / 100f,
-                Mathf.Round(spawnPoint.y * 100f) / 100f), //Right neighbor point
-            new Vector2(Mathf.Round((spawnPoint.x - _bias) * 100f) / 100f,
-                Mathf.Round((spawnPoint.y - (_tileSize.y + _seam)) * 100f) / 100f) //Lower neighbor point
+            new Vector2(Mathf.Round((spawnPoint.x - (_tileSize.x + _seam)) * Constants.Precision) / 
+                        Constants.Precision, Mathf.Round(spawnPoint.y * Constants.Precision) / Constants.Precision), //Left neighbor point
+            new Vector2(Mathf.Round((spawnPoint.x + _bias) * Constants.Precision) / Constants.Precision,
+                Mathf.Round((spawnPoint.y + (_tileSize.y + _seam)) * Constants.Precision) / Constants.Precision), //Upper neighbor point
+            new Vector2(Mathf.Round((spawnPoint.x + (_tileSize.x + _seam)) * Constants.Precision) / Constants.Precision,
+                Mathf.Round(spawnPoint.y * Constants.Precision) / Constants.Precision), //Right neighbor point
+            new Vector2(Mathf.Round((spawnPoint.x - _bias) * Constants.Precision) / Constants.Precision,
+                Mathf.Round((spawnPoint.y - (_tileSize.y + _seam)) * Constants.Precision) / Constants.Precision) //Lower neighbor point
         };
         return neighborPoints;
     }
